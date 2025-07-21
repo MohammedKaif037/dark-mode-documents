@@ -7,14 +7,13 @@ import {
   Upload,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Maximize,
   Settings,
   Moon,
   FileText,
   Contrast,
+  FolderOpen,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -23,6 +22,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import PDFViewer from "@/components/pdf-viewer-alternative"
 import WordViewer from "@/components/word-viewer"
 import TextViewer from "@/components/text-viewer"
@@ -30,7 +40,7 @@ import TextViewer from "@/components/text-viewer"
 type DocumentFile = File
 type FileType = "pdf" | "word" | "text" | null
 
-export default function Home() {
+export default function DocumentReader() {
   const [documentFile, setDocumentFile] = useState<DocumentFile | null>(null)
   const [fileType, setFileType] = useState<FileType>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -96,6 +106,21 @@ export default function Home() {
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
+  }, [])
+
+  const handleGoHome = useCallback(() => {
+    setDocumentFile(null)
+    setFileType(null)
+    setCurrentPage(1)
+    setTotalPages(0)
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }, [])
+
+  const handleNewFile = useCallback(() => {
+    fileInputRef.current?.click()
   }, [])
 
   const toggleFullscreen = useCallback(() => {
@@ -181,6 +206,41 @@ export default function Home() {
           <div className="flex items-center gap-2">
             {documentFile && (
               <>
+                {/* Navigation Controls */}
+                <div className="flex items-center gap-1 mr-2">
+                  <Button variant="ghost" size="sm" onClick={handleNewFile} title="Open New File">
+                    <FolderOpen className="w-4 h-4" />
+                  </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" title="Close Document">
+                        <Moon className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-gray-800 border-gray-700">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-gray-100">Close Document?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          Are you sure you want to close this document? You'll return to the home page to select a new
+                          file.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleGoHome} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          Close Document
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  <div className="w-px h-6 bg-gray-600 mx-2" />
+                </div>
+
+                {/* Document Controls */}
                 {fileType === "pdf" && (
                   <>
                     <Button variant="ghost" size="sm" onClick={prevPage} disabled={currentPage <= 1}>
@@ -208,17 +268,17 @@ export default function Home() {
                 </Button>
 
                 <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                  <RotateCcw className="w-4 h-4" />
+                  <Moon className="w-4 h-4" />
                 </Button>
 
                 {fileType === "pdf" && (
                   <Button variant="ghost" size="sm" onClick={rotate} title="Rotate">
-                    <RotateCcw className="w-4 h-4 rotate-90" />
+                    <Moon className="w-4 h-4 rotate-90" />
                   </Button>
                 )}
 
                 <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Fullscreen">
-                  <Maximize className="w-4 h-4" />
+                  <Moon className="w-4 h-4" />
                 </Button>
               </>
             )}
@@ -238,6 +298,35 @@ export default function Home() {
                 </SheetHeader>
 
                 <div className="space-y-6 mt-6">
+                  {documentFile && (
+                    <div className="border-b border-gray-700 pb-4">
+                      <h3 className="text-sm font-medium text-gray-200 mb-3 flex items-center gap-2">
+                        <Moon className="w-4 h-4" />
+                        Navigation
+                      </h3>
+                      <div className="space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleNewFile}
+                          className="w-full bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 justify-start"
+                        >
+                          <FolderOpen className="w-4 h-4 mr-2" />
+                          Open New File
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGoHome}
+                          className="w-full bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 justify-start"
+                        >
+                          <Moon className="w-4 h-4 mr-2" />
+                          Back to Home
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label className="text-gray-200">Theme</Label>
                     <Select
