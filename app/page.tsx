@@ -520,11 +520,9 @@ export default function DocumentReader() {
       {/* Main Content - Fixed container with proper scrolling */}
       <main 
         ref={mainRef}
-        className="flex-1 overflow-auto relative"
+        className="flex-1 overflow-auto"
         style={{
           height: 'calc(100vh - 80px)', // Subtract header height
-          overflowX: zoom > 1 ? 'auto' : 'hidden',
-          overflowY: 'auto',
         }}
       >
         {!documentFile ? (
@@ -556,18 +554,18 @@ export default function DocumentReader() {
             </Card>
           </div>
         ) : (
-          <div 
-            className="w-full"
-            style={{
-              minWidth: zoom > 1 ? `${100 * zoom}%` : '100%',
-              width: zoom > 1 ? `${100 * zoom}%` : '100%',
-              transform: `scale(${zoom})`,
-              transformOrigin: 'top left',
-              transition: 'transform 0.2s ease-in-out',
-            }}
-          >
-            <div className="p-4 w-full flex justify-center">
-              <div className="w-full max-w-4xl">
+          <div className="flex justify-center w-full">
+            <div 
+              className="p-4"
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.2s ease-in-out',
+                width: 'max-content',
+                minWidth: '100%',
+              }}
+            >
+              <div className="w-full max-w-4xl mx-auto">
                 {fileType === "pdf" ? (
                   <PDFViewer
                     file={documentFile}
