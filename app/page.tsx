@@ -554,15 +554,26 @@ export default function DocumentReader() {
             </Card>
           </div>
         ) : (
-          <div className="flex justify-center w-full">
+          // Fixed scrollable container for zoomed content
+          <div 
+            className="w-full h-full overflow-auto"
+            style={{
+              // Ensure the container can handle the zoomed content dimensions
+              minWidth: '100%',
+              minHeight: '100%',
+            }}
+          >
             <div 
               className="p-4"
               style={{
                 transform: `scale(${zoom})`,
-                transformOrigin: 'top center',
+                transformOrigin: 'top left', // Changed from 'top center' to 'top left'
                 transition: 'transform 0.2s ease-in-out',
-                width: 'max-content',
-                minWidth: '100%',
+                // Calculate the actual width needed for the scaled content
+                width: `${100 / zoom}%`,
+                minWidth: `${800 / zoom}px`, // Minimum width to ensure content isn't too narrow
+                // Ensure the scaled container takes up the right amount of space
+                height: 'max-content',
               }}
             >
               <div className="w-full max-w-4xl mx-auto">
