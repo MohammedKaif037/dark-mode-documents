@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-
 import { useState, useRef, useCallback, useEffect } from "react"
 import {
   Upload,
@@ -151,7 +150,22 @@ export default function DocumentReader() {
   }, [])
 
   const handleNewFile = useCallback(() => {
-    fileInputRef.current?.click()
+    // Reset current document state first
+    setDocumentFile(null)
+    setFileType(null)
+    setCurrentPage(1)
+    setTotalPages(0)
+    setZoom(1.0) // Reset zoom when opening new file
+
+    // Reset file input value to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+
+    // Trigger file selection
+    setTimeout(() => {
+      fileInputRef.current?.click()
+    }, 100) // Small delay to ensure state is reset
   }, [])
 
   const toggleFullscreen = useCallback(() => {
@@ -414,7 +428,14 @@ export default function DocumentReader() {
                           <span>{Math.round(zoom * 100)}%</span>
                           <span>200%</span>
                         </div>
-                        <div className="text-xs text-gray-500">Zooms the entire document layout</div>
+                        <div className="text-xs text-gray-500">
+                          Zooms the entire document layout
+                          {zoom > 1 && (
+                            <span className="block text-yellow-400 mt-1">
+                              💡 Scroll horizontally to see full content
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -506,9 +527,17 @@ export default function DocumentReader() {
         </div>
       </header>
 
-      {/* Main Content - This gets zoomed */}
+      {/* Main Content - This gets zoomed with horizontal scroll support */}
       <main className="flex-1 overflow-auto">
-        <div ref={contentRef} style={getZoomStyles()}>
+        <div
+          ref={contentRef}
+          style={{
+            ...getZoomStyles(),
+            width: zoom > 1 ? `${100 * zoom}%` : "100%",
+            minWidth: zoom > 1 ? `${100 * zoom}vw` : "100vw",
+          }}
+          className="origin-top-center"
+        >
           {!documentFile ? (
             <div
               className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8"
@@ -538,7 +567,7 @@ export default function DocumentReader() {
               </Card>
             </div>
           ) : (
-            <div className="p-4">
+            <div className="p-4" style={{ minWidth: zoom > 1 ? "100vw" : "auto" }}>
               {fileType === "pdf" ? (
                 <PDFViewer
                   file={documentFile}
