@@ -230,7 +230,8 @@ export default function DocumentReader() {
       transform: `scale(${zoom})`,
       transformOrigin: "top center",
       transition: "transform 0.2s ease-in-out",
-      minHeight: `${100 / zoom}vh`, // Adjust container height to prevent overflow
+      width: "100%",
+      minHeight: `${100 / zoom}vh`,
     }
   }
 
@@ -528,19 +529,27 @@ export default function DocumentReader() {
       </header>
 
       {/* Main Content - This gets zoomed with horizontal scroll support */}
-      <main className="flex-1 overflow-auto">
+      <main
+        className="flex-1 overflow-auto"
+        style={{
+          overflowX: zoom > 1 ? "auto" : "hidden",
+          overflowY: "auto",
+        }}
+      >
         <div
           ref={contentRef}
           style={{
             ...getZoomStyles(),
-            width: zoom > 1 ? `${100 * zoom}%` : "100%",
-            minWidth: zoom > 1 ? `${100 * zoom}vw` : "100vw",
+            minWidth: zoom > 1 ? `${100 * zoom}%` : "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
           }}
           className="origin-top-center"
         >
           {!documentFile ? (
             <div
-              className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8"
+              className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8 w-full"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
@@ -567,7 +576,13 @@ export default function DocumentReader() {
               </Card>
             </div>
           ) : (
-            <div className="p-4" style={{ minWidth: zoom > 1 ? "100vw" : "auto" }}>
+            <div
+              className="p-4 w-full max-w-none"
+              style={{
+                minWidth: zoom > 1 ? `${100 / zoom}%` : "100%",
+                width: zoom > 1 ? `${100 / zoom}%` : "100%",
+              }}
+            >
               {fileType === "pdf" ? (
                 <PDFViewer
                   file={documentFile}
