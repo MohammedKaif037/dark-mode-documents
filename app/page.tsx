@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import {
   Upload,
   ZoomIn,
@@ -59,6 +59,33 @@ export default function DocumentReader() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // Handle keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case "=":
+          case "+":
+            event.preventDefault()
+            zoomIn()
+            break
+          case "-":
+            event.preventDefault()
+            zoomOut()
+            break
+          case "0":
+            event.preventDefault()
+            resetZoom()
+            break
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const getFileType = (file: File): FileType => {
     if (file.type === "application/pdf") return "pdf"
@@ -181,10 +208,21 @@ export default function DocumentReader() {
     }
   }
 
+  const getZoomStyles = () => {
+    if (!documentFile) return {}
+
+    return {
+      transform: `scale(${zoom})`,
+      transformOrigin: "top center",
+      transition: "transform 0.2s ease-in-out",
+      minHeight: `${100 / zoom}vh`, // Adjust container height to prevent overflow
+    }
+  }
+
   return (
     <div ref={containerRef} className={`min-h-screen transition-colors duration-300 ${getThemeClasses()}`}>
-      {/* Header */}
-      <header className="border-b border-gray-600 bg-gray-800 backdrop-blur-sm p-4">
+      {/* Header - Fixed and not affected by zoom */}
+      <header className="border-b border-gray-600 bg-gray-800 backdrop-blur-sm p-4 relative z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -211,13 +249,13 @@ export default function DocumentReader() {
               <>
                 {/* Navigation Controls */}
                 <div className="flex items-center gap-1 mr-2">
-                  <Button variant="ghost" size="sm" onClick={handleNewFile} title="Open New File">
+                  <Button variant="ghost" size="sm" onClick={handleNewFile} title="Open New File (Ctrl+O)">
                     <FolderOpen className="w-4 h-4" />
                   </Button>
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" title="Close Document">
+                      <Button variant="ghost" size="sm" title="Close Document (Ctrl+W)">
                         <X className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -258,7 +296,7 @@ export default function DocumentReader() {
                   </>
                 )}
 
-                <Button variant="ghost" size="sm" onClick={zoomOut}>
+                <Button variant="ghost" size="sm" onClick={zoomOut} title="Zoom Out (Ctrl+-)">
                   <ZoomOut className="w-4 h-4" />
                 </Button>
 
@@ -266,11 +304,11 @@ export default function DocumentReader() {
                   {Math.round(zoom * 100)}%
                 </span>
 
-                <Button variant="ghost" size="sm" onClick={zoomIn}>
+                <Button variant="ghost" size="sm" onClick={zoomIn} title="Zoom In (Ctrl++)">
                   <ZoomIn className="w-4 h-4" />
                 </Button>
 
-                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom (Ctrl+0)">
                   <RotateCcw className="w-4 h-4" />
                 </Button>
 
@@ -280,7 +318,7 @@ export default function DocumentReader() {
                   </Button>
                 )}
 
-                <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Fullscreen">
+                <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Fullscreen (F11)">
                   <Maximize className="w-4 h-4" />
                 </Button>
               </>
@@ -323,7 +361,7 @@ export default function DocumentReader() {
                           onClick={handleGoHome}
                           className="w-full bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 justify-start"
                         >
-                          <Moon className="w-4 h-4 mr-2" />
+                          <X className="w-4 h-4 mr-2" />
                           Back to Home
                         </Button>
                       </div>
@@ -361,6 +399,24 @@ export default function DocumentReader() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
+                        <Label className="text-gray-200">Layout Zoom</Label>
+                        <Slider
+                          value={[zoom]}
+                          onValueChange={([value]) => setZoom(value)}
+                          min={0.5}
+                          max={2.0}
+                          step={0.25}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>50%</span>
+                          <span>{Math.round(zoom * 100)}%</span>
+                          <span>200%</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Zooms the entire document layout</div>
+                      </div>
+
+                      <div className="space-y-2">
                         <Label className="text-gray-200">Contrast</Label>
                         <Slider
                           value={[contrast]}
@@ -391,23 +447,6 @@ export default function DocumentReader() {
                           <span>Dim</span>
                           <span>{brightness.toFixed(1)}x</span>
                           <span>Bright</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-gray-200">Zoom Level</Label>
-                        <Slider
-                          value={[zoom]}
-                          onValueChange={([value]) => setZoom(value)}
-                          min={0.5}
-                          max={3.0}
-                          step={0.25}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>50%</span>
-                          <span>{Math.round(zoom * 100)}%</span>
-                          <span>300%</span>
                         </div>
                       </div>
 
@@ -452,10 +491,11 @@ export default function DocumentReader() {
 
                   <div className="border-t border-gray-700 pt-4">
                     <div className="text-xs text-gray-500 space-y-1">
-                      <p>💡 Tip: Adjust contrast and brightness based on your environment</p>
-                      <p>🌙 Lower settings for nighttime reading</p>
-                      <p>☀️ Higher settings for bright environments</p>
-                      {fileType === "text" && <p>📝 Text files support all visual adjustments</p>}
+                      <p>⌨️ Keyboard shortcuts:</p>
+                      <p>Ctrl/Cmd + Plus: Zoom in</p>
+                      <p>Ctrl/Cmd + Minus: Zoom out</p>
+                      <p>Ctrl/Cmd + 0: Reset zoom</p>
+                      <p>💡 Layout zoom affects the entire document view</p>
                     </div>
                   </div>
                 </div>
@@ -465,70 +505,75 @@ export default function DocumentReader() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {!documentFile ? (
-          <div
-            className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <Card className="p-12 text-center max-w-md bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors shadow-xl">
-              <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h2 className="text-xl font-semibold mb-2 text-gray-100">Upload a Document</h2>
-              <p className="text-gray-400 mb-6">Drag and drop a document here, or click to select one</p>
-              <div className="space-y-3">
-                <Button onClick={() => fileInputRef.current?.click()} className="w-full bg-blue-600 hover:bg-blue-700">
-                  Select Document
-                </Button>
-                <div className="text-xs text-gray-500">Supported formats: PDF, DOCX, DOC, TXT</div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </Card>
-          </div>
-        ) : (
-          <div className="p-4">
-            {fileType === "pdf" ? (
-              <PDFViewer
-                file={documentFile}
-                currentPage={currentPage}
-                zoom={zoom}
-                rotation={rotation}
-                theme={theme}
-                autoScroll={autoScroll}
-                scrollSpeed={scrollSpeed}
-                contrast={contrast}
-                brightness={brightness}
-                onPageChange={setCurrentPage}
-                onTotalPagesChange={setTotalPages}
-              />
-            ) : fileType === "word" ? (
-              <WordViewer
-                file={documentFile}
-                zoom={zoom}
-                theme={theme}
-                contrast={contrast}
-                brightness={brightness}
-                onTotalPagesChange={setTotalPages}
-              />
-            ) : fileType === "text" ? (
-              <TextViewer
-                file={documentFile}
-                zoom={zoom}
-                theme={theme}
-                contrast={contrast}
-                brightness={brightness}
-                onTotalPagesChange={setTotalPages}
-              />
-            ) : null}
-          </div>
-        )}
+      {/* Main Content - This gets zoomed */}
+      <main className="flex-1 overflow-auto">
+        <div ref={contentRef} style={getZoomStyles()}>
+          {!documentFile ? (
+            <div
+              className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <Card className="p-12 text-center max-w-md bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors shadow-xl">
+                <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <h2 className="text-xl font-semibold mb-2 text-gray-100">Upload a Document</h2>
+                <p className="text-gray-400 mb-6">Drag and drop a document here, or click to select one</p>
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Select Document
+                  </Button>
+                  <div className="text-xs text-gray-500">Supported formats: PDF, DOCX, DOC, TXT</div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </Card>
+            </div>
+          ) : (
+            <div className="p-4">
+              {fileType === "pdf" ? (
+                <PDFViewer
+                  file={documentFile}
+                  currentPage={currentPage}
+                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                  rotation={rotation}
+                  theme={theme}
+                  autoScroll={autoScroll}
+                  scrollSpeed={scrollSpeed}
+                  contrast={contrast}
+                  brightness={brightness}
+                  onPageChange={setCurrentPage}
+                  onTotalPagesChange={setTotalPages}
+                />
+              ) : fileType === "word" ? (
+                <WordViewer
+                  file={documentFile}
+                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                  theme={theme}
+                  contrast={contrast}
+                  brightness={brightness}
+                  onTotalPagesChange={setTotalPages}
+                />
+              ) : fileType === "text" ? (
+                <TextViewer
+                  file={documentFile}
+                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                  theme={theme}
+                  contrast={contrast}
+                  brightness={brightness}
+                  onTotalPagesChange={setTotalPages}
+                />
+              ) : null}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )
