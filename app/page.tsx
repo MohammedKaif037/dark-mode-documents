@@ -14,6 +14,9 @@ import {
   FileText,
   Contrast,
   FolderOpen,
+  X,
+  RotateCcw,
+  Maximize,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -215,7 +218,7 @@ export default function DocumentReader() {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" title="Close Document">
-                        <Moon className="w-4 h-4" />
+                        <X className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-gray-800 border-gray-700">
@@ -268,17 +271,17 @@ export default function DocumentReader() {
                 </Button>
 
                 <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                  <Moon className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
                 </Button>
 
                 {fileType === "pdf" && (
                   <Button variant="ghost" size="sm" onClick={rotate} title="Rotate">
-                    <Moon className="w-4 h-4 rotate-90" />
+                    <RotateCcw className="w-4 h-4 rotate-90" />
                   </Button>
                 )}
 
                 <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Fullscreen">
-                  <Moon className="w-4 h-4" />
+                  <Maximize className="w-4 h-4" />
                 </Button>
               </>
             )}
