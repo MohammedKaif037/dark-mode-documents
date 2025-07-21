@@ -60,6 +60,7 @@ export default function DocumentReader() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
 
   // Handle keyboard shortcuts for zoom
   useEffect(() => {
@@ -220,18 +221,6 @@ export default function DocumentReader() {
         return "Text"
       default:
         return ""
-    }
-  }
-
-  const getZoomStyles = () => {
-    if (!documentFile) return {}
-
-    return {
-      transform: `scale(${zoom})`,
-      transformOrigin: "top center",
-      transition: "transform 0.2s ease-in-out",
-      width: "100%",
-      minHeight: `${100 / zoom}vh`,
     }
   }
 
@@ -528,97 +517,94 @@ export default function DocumentReader() {
         </div>
       </header>
 
-      {/* Main Content - This gets zoomed with horizontal scroll support */}
-      <main
-        className="flex-1 overflow-auto"
+      {/* Main Content - Fixed container with proper scrolling */}
+      <main 
+        ref={mainRef}
+        className="flex-1 overflow-auto relative"
         style={{
-          overflowX: zoom > 1 ? "auto" : "hidden",
-          overflowY: "auto",
+          height: 'calc(100vh - 80px)', // Subtract header height
+          overflowX: zoom > 1 ? 'auto' : 'hidden',
+          overflowY: 'auto',
         }}
       >
-        <div
-          ref={contentRef}
-          style={{
-            ...getZoomStyles(),
-            minWidth: zoom > 1 ? `${100 * zoom}%` : "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-start",
-          }}
-          className="origin-top-center"
-        >
-          {!documentFile ? (
-            <div
-              className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8 w-full"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-            >
-              <Card className="p-12 text-center max-w-md bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors shadow-xl">
-                <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h2 className="text-xl font-semibold mb-2 text-gray-100">Upload a Document</h2>
-                <p className="text-gray-400 mb-6">Drag and drop a document here, or click to select one</p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Select Document
-                  </Button>
-                  <div className="text-xs text-gray-500">Supported formats: PDF, DOCX, DOC, TXT</div>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </Card>
+        {!documentFile ? (
+          <div
+            className="flex flex-col items-center justify-center h-full p-8 w-full"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
+            <Card className="p-12 text-center max-w-md bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors shadow-xl">
+              <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h2 className="text-xl font-semibold mb-2 text-gray-100">Upload a Document</h2>
+              <p className="text-gray-400 mb-6">Drag and drop a document here, or click to select one</p>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Select Document
+                </Button>
+                <div className="text-xs text-gray-500">Supported formats: PDF, DOCX, DOC, TXT</div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </Card>
+          </div>
+        ) : (
+          <div 
+            className="w-full"
+            style={{
+              minWidth: zoom > 1 ? `${100 * zoom}%` : '100%',
+              width: zoom > 1 ? `${100 * zoom}%` : '100%',
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+              transition: 'transform 0.2s ease-in-out',
+            }}
+          >
+            <div className="p-4 w-full flex justify-center">
+              <div className="w-full max-w-4xl">
+                {fileType === "pdf" ? (
+                  <PDFViewer
+                    file={documentFile}
+                    currentPage={currentPage}
+                    zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                    rotation={rotation}
+                    theme={theme}
+                    autoScroll={autoScroll}
+                    scrollSpeed={scrollSpeed}
+                    contrast={contrast}
+                    brightness={brightness}
+                    onPageChange={setCurrentPage}
+                    onTotalPagesChange={setTotalPages}
+                  />
+                ) : fileType === "word" ? (
+                  <WordViewer
+                    file={documentFile}
+                    zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                    theme={theme}
+                    contrast={contrast}
+                    brightness={brightness}
+                    onTotalPagesChange={setTotalPages}
+                  />
+                ) : fileType === "text" ? (
+                  <TextViewer
+                    file={documentFile}
+                    zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
+                    theme={theme}
+                    contrast={contrast}
+                    brightness={brightness}
+                    onTotalPagesChange={setTotalPages}
+                  />
+                ) : null}
+              </div>
             </div>
-          ) : (
-            <div
-              className="p-4 w-full max-w-none"
-              style={{
-                minWidth: zoom > 1 ? `${100 / zoom}%` : "100%",
-                width: zoom > 1 ? `${100 / zoom}%` : "100%",
-              }}
-            >
-              {fileType === "pdf" ? (
-                <PDFViewer
-                  file={documentFile}
-                  currentPage={currentPage}
-                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
-                  rotation={rotation}
-                  theme={theme}
-                  autoScroll={autoScroll}
-                  scrollSpeed={scrollSpeed}
-                  contrast={contrast}
-                  brightness={brightness}
-                  onPageChange={setCurrentPage}
-                  onTotalPagesChange={setTotalPages}
-                />
-              ) : fileType === "word" ? (
-                <WordViewer
-                  file={documentFile}
-                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
-                  theme={theme}
-                  contrast={contrast}
-                  brightness={brightness}
-                  onTotalPagesChange={setTotalPages}
-                />
-              ) : fileType === "text" ? (
-                <TextViewer
-                  file={documentFile}
-                  zoom={1.0} // Pass 1.0 since we're handling zoom at layout level
-                  theme={theme}
-                  contrast={contrast}
-                  brightness={brightness}
-                  onTotalPagesChange={setTotalPages}
-                />
-              ) : null}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   )
